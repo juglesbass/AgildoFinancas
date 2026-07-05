@@ -27,7 +27,6 @@ ApplicationWindow {
         implicitHeight: 46
         radius: 8
         color: mouseArea.pressed ? Qt.darker(corBase, 1.15) : corBase
-        // Animação suave padrão iOS
         Behavior on color { ColorAnimation { duration: 150; easing.type: Easing.OutQuad } }
         signal clicked()
 
@@ -202,7 +201,6 @@ ApplicationWindow {
         anchors.fill: parent
         clip: true
 
-        // FÍSICA E TRAVA DO IOS:
         contentWidth: width
         contentHeight: mainColumn.height + 32
         flickableDirection: Flickable.VerticalFlick
@@ -470,7 +468,7 @@ ApplicationWindow {
             }
 
             // ---------- Dívidas e parcelamentos ----------
-            Item { width: 1; height: 4 } // Espaçador
+            Item { width: 1; height: 4 }
             Label {
                 text: "Minhas dívidas e parcelamentos"
                 font.pixelSize: 16
@@ -548,7 +546,7 @@ ApplicationWindow {
             }
 
             // ---------- Histórico ----------
-            Item { width: 1; height: 4 } // Espaçador
+            Item { width: 1; height: 4 }
             Label { text: "Histórico"; font.pixelSize: 16; font.bold: true; color: "#111827" }
 
             Label {
@@ -620,7 +618,7 @@ ApplicationWindow {
                 }
             }
 
-            Item { width: 1; height: 16 } // margem inferior
+            Item { width: 1; height: 16 }
         }
     }
 
@@ -680,7 +678,11 @@ ApplicationWindow {
             RowLayout {
                 Layout.fillWidth: true
                 Label { text: "Despesas fixas · " + mesAtual; font.pixelSize: 16; font.bold: true; color: "#111827"; Layout.fillWidth: true }
-                Rectangle { width: 26; height: 26; radius: 13; color: "#F3F4F6"; Label { anchors.centerIn: parent; text: "✕"; color: "#9CA3AF"; font.pixelSize: 12 }; MouseArea { anchors.fill: parent; onClicked: popupFixas.close() } }
+                Rectangle {
+                    width: 26; height: 26; radius: 13; color: "#F3F4F6"
+                    Label { anchors.centerIn: parent; text: "✕"; color: "#9CA3AF"; font.pixelSize: 12 }
+                    MouseArea { anchors.fill: parent; onClicked: popupFixas.close() }
+                }
             }
 
             Label { visible: fixasModel.count === 0; text: "Nenhuma despesa fixa cadastrada ainda. Adicione abaixo (ex: Dízimo, Internet, Água...)."; color: "#9CA3AF"; wrapMode: Text.WordWrap; Layout.fillWidth: true }
@@ -715,11 +717,31 @@ ApplicationWindow {
                                 anchors.margins: 8
                                 spacing: 8
 
-                                Rectangle { width: 28; height: 28; radius: 14; color: model.pago ? "#16A34A" : "#E5E7EB"; Label { anchors.centerIn: parent; text: model.pago ? "✓" : ""; color: "white"; font.bold: true }; MouseArea { anchors.fill: parent; onClicked: { if (model.pago) { db.desmarcarDespesaFixaPaga(model.id, mesAtual); } else { var falta = model.valorPrevisto - model.valorGasto; if (falta <= 0) falta = model.valorPrevisto; db.marcarDespesaFixaPaga(model.id, mesAtual, falta, hojeISO()); } atualizarFixas(); atualizarLista(); atualizarResumo(); } } }
-                                ColumnLayout { Layout.fillWidth: true; spacing: 1; Label { text: model.descricao; font.bold: true; font.pixelSize: 13; color: "#111827"; elide: Text.ElideRight; Layout.fillWidth: true }; Label { text: model.categoria + " · " + formatarMoeda(model.valorGasto) + " de " + formatarMoeda(model.valorPrevisto); font.pixelSize: 11; color: "#6B7280"; elide: Text.ElideRight; Layout.fillWidth: true } }
+                                Rectangle {
+                                    width: 28; height: 28; radius: 14; color: model.pago ? "#16A34A" : "#E5E7EB"
+                                    Label { anchors.centerIn: parent; text: model.pago ? "✓" : ""; color: "white"; font.bold: true }
+                                    MouseArea { anchors.fill: parent; onClicked: { if (model.pago) { db.desmarcarDespesaFixaPaga(model.id, mesAtual); } else { var falta = model.valorPrevisto - model.valorGasto; if (falta <= 0) falta = model.valorPrevisto; db.marcarDespesaFixaPaga(model.id, mesAtual, falta, hojeISO()); } atualizarFixas(); atualizarLista(); atualizarResumo(); } }
+                                }
+
+                                ColumnLayout {
+                                    Layout.fillWidth: true; spacing: 1
+                                    Label { text: model.descricao; font.bold: true; font.pixelSize: 13; color: "#111827"; elide: Text.ElideRight; Layout.fillWidth: true }
+                                    Label { text: model.categoria + " · " + formatarMoeda(model.valorGasto) + " de " + formatarMoeda(model.valorPrevisto); font.pixelSize: 11; color: "#6B7280"; elide: Text.ElideRight; Layout.fillWidth: true }
+                                }
+
                                 Label { text: formatarMoeda(model.valorPrevisto); font.bold: true; font.pixelSize: 13; color: model.pago ? "#16A34A" : "#111827" }
-                                Rectangle { width: 24; height: 24; radius: 12; color: "#F3F4F6"; Label { anchors.centerIn: parent; text: "✏️"; font.pixelSize: 10 }; MouseArea { anchors.fill: parent; onClicked: { idEditandoFixa = model.id; campoFixaDescricao.text = model.descricao; var idx = categoriasDespesa.indexOf(model.categoria); comboFixaCategoria.currentIndex = idx >= 0 ? idx : 0; campoFixaValor.text = String(model.valorPrevisto).replace(".", ","); popupEditarFixa.open(); } } }
-                                Rectangle { width: 24; height: 24; radius: 12; color: "#F3F4F6"; Label { anchors.centerIn: parent; text: "✕"; color: "#9CA3AF"; font.pixelSize: 11 }; MouseArea { anchors.fill: parent; onClicked: { db.removerDespesaFixa(model.id); atualizarFixas(); } } }
+
+                                Rectangle {
+                                    width: 24; height: 24; radius: 12; color: "#F3F4F6"
+                                    Label { anchors.centerIn: parent; text: "✏️"; font.pixelSize: 10 }
+                                    MouseArea { anchors.fill: parent; onClicked: { idEditandoFixa = model.id; campoFixaDescricao.text = model.descricao; var idx = categoriasDespesa.indexOf(model.categoria); comboFixaCategoria.currentIndex = idx >= 0 ? idx : 0; campoFixaValor.text = String(model.valorPrevisto).replace(".", ","); popupEditarFixa.open(); } }
+                                }
+
+                                Rectangle {
+                                    width: 24; height: 24; radius: 12; color: "#F3F4F6"
+                                    Label { anchors.centerIn: parent; text: "✕"; color: "#9CA3AF"; font.pixelSize: 11 }
+                                    MouseArea { anchors.fill: parent; onClicked: { db.removerDespesaFixa(model.id); atualizarFixas(); } }
+                                }
                             }
                         }
                     }
@@ -729,7 +751,15 @@ ApplicationWindow {
                         implicitHeight: 70
                         radius: 10
                         color: "#F3F4F6"
-                        Column { anchors.fill: parent; anchors.margins: 8; spacing: 2; RowLayout { width: parent.width; Label { text: "Previsto: " + formatarMoeda(totalFixasPrevisto); font.pixelSize: 12; color: "#374151"; Layout.fillWidth: true }; Label { text: "Pago: " + formatarMoeda(totalFixasPago); font.pixelSize: 12; color: "#16A34A" } }; Label { text: "Falta pagar: " + formatarMoeda(totalFixasFalta); font.pixelSize: 13; font.bold: true; color: "#DC2626" } }
+                        Column {
+                            anchors.fill: parent; anchors.margins: 8; spacing: 2
+                            RowLayout {
+                                width: parent.width
+                                Label { text: "Previsto: " + formatarMoeda(totalFixasPrevisto); font.pixelSize: 12; color: "#374151"; Layout.fillWidth: true }
+                                Label { text: "Pago: " + formatarMoeda(totalFixasPago); font.pixelSize: 12; color: "#16A34A" }
+                            }
+                            Label { text: "Falta pagar: " + formatarMoeda(totalFixasFalta); font.pixelSize: 13; font.bold: true; color: "#DC2626" }
+                        }
                     }
 
                     Rectangle {
