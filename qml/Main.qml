@@ -155,18 +155,23 @@ ApplicationWindow {
     function atualizarLista() {
         listaModel.clear();
         var dados = db.listarLancamentos();
-        for (var i = 0; i < dados.length; i++) listaModel.append(dados[i]);
+        for (var i = 0; i < dados.length; i++) {
+            listaModel.append(dados[i]);
+        }
     }
 
     function atualizarDividas() {
         dividasModel.clear();
         var dividas = db.listarDividas();
-        for (var i = 0; i < dividas.length; i++) dividasModel.append(dividas[i]);
+        for (var i = 0; i < dividas.length; i++) {
+            dividasModel.append(dividas[i]);
+        }
     }
 
     function atualizarFixas() {
         fixasModel.clear();
-        var previsto = 0, gasto = 0;
+        var previsto = 0;
+        var gasto = 0;
         var fixas = db.listarDespesasFixas(mesAtual);
         for (var i = 0; i < fixas.length; i++) {
             fixasModel.append(fixas[i]);
@@ -209,7 +214,11 @@ ApplicationWindow {
         boundsBehavior: Flickable.DragAndOvershootBounds
 
         rebound: Transition {
-            NumberAnimation { properties: "y"; duration: 350; easing.type: Easing.OutCubic }
+            NumberAnimation {
+                properties: "y"
+                duration: 350
+                easing.type: Easing.OutCubic
+            }
         }
 
         Column {
@@ -304,28 +313,40 @@ ApplicationWindow {
                     label: "Receita"
                     corAtiva: "#16A34A"
                     selecionado: modoAtual === "receita"
-                    onClicked: { modoAtual = "receita"; avisoValidacao.visible = false; }
+                    onClicked: {
+                        modoAtual = "receita";
+                        avisoValidacao.visible = false;
+                    }
                 }
                 ToggleChip {
                     Layout.fillWidth: true
                     label: "Despesa"
                     corAtiva: "#DC2626"
                     selecionado: modoAtual === "despesa"
-                    onClicked: { modoAtual = "despesa"; avisoValidacao.visible = false; }
+                    onClicked: {
+                        modoAtual = "despesa";
+                        avisoValidacao.visible = false;
+                    }
                 }
                 ToggleChip {
                     Layout.fillWidth: true
                     label: "Reserva"
                     corAtiva: "#2563EB"
                     selecionado: modoAtual === "reserva"
-                    onClicked: { modoAtual = "reserva"; avisoValidacao.visible = false; }
+                    onClicked: {
+                        modoAtual = "reserva";
+                        avisoValidacao.visible = false;
+                    }
                 }
                 ToggleChip {
                     Layout.fillWidth: true
                     label: "Dívida"
                     corAtiva: "#7C3AED"
                     selecionado: modoAtual === "divida"
-                    onClicked: { modoAtual = "divida"; avisoValidacao.visible = false; }
+                    onClicked: {
+                        modoAtual = "divida";
+                        avisoValidacao.visible = false;
+                    }
                 }
             }
 
@@ -340,23 +361,24 @@ ApplicationWindow {
                 Column {
                     id: formColumn
                     width: parent.width - 24
-                    x: 12; y: 12
+                    x: 12
+                    y: 12
                     spacing: 10
 
                     TextField {
                         id: campoDescricao
                         width: parent.width
-                        placeholderText: modoAtual === "receita" ? "Ex: Salário"
-                        : modoAtual === "despesa" ? "Ex: Supermercado"
-                        : modoAtual === "reserva" ? "Ex: Conserto do carro"
-                        : "Ex: Notebook parcelado"
+                        placeholderText: modoAtual === "receita" ? "Ex: Salário" : modoAtual === "despesa" ? "Ex: Supermercado" : modoAtual === "reserva" ? "Ex: Conserto do carro" : "Ex: Notebook parcelado"
                     }
 
                     RowLayout {
                         visible: modoAtual === "despesa"
                         width: parent.width
                         spacing: 8
-                        Label { text: "Categoria:"; color: "#374151" }
+                        Label {
+                            text: "Categoria:"
+                            color: "#374151"
+                        }
                         ComboBox {
                             id: comboCategoria
                             Layout.fillWidth: true
@@ -388,7 +410,10 @@ ApplicationWindow {
                         visible: modoAtual === "divida"
                         width: parent.width
                         spacing: 8
-                        Label { text: "Categoria:"; color: "#374151" }
+                        Label {
+                            text: "Categoria:"
+                            color: "#374151"
+                        }
                         ComboBox {
                             id: comboCategoriaDivida
                             Layout.fillWidth: true
@@ -423,14 +448,8 @@ ApplicationWindow {
 
                     AppButton {
                         width: parent.width
-                        label: modoAtual === "receita" ? "Adicionar receita"
-                        : modoAtual === "despesa" ? "Adicionar despesa"
-                        : modoAtual === "reserva" ? (tipoReserva === "deposito" ? "Depositar na reserva" : "Sacar da reserva")
-                        : "Registrar dívida"
-                        corBase: modoAtual === "receita" ? "#16A34A"
-                        : modoAtual === "despesa" ? "#DC2626"
-                        : modoAtual === "reserva" ? "#2563EB"
-                        : "#7C3AED"
+                        label: modoAtual === "receita" ? "Adicionar receita" : modoAtual === "despesa" ? "Adicionar despesa" : modoAtual === "reserva" ? (tipoReserva === "deposito" ? "Depositar na reserva" : "Sacar da reserva") : "Registrar dívida"
+                        corBase: modoAtual === "receita" ? "#16A34A" : modoAtual === "despesa" ? "#DC2626" : modoAtual === "reserva" ? "#2563EB" : "#7C3AED"
                         onClicked: {
                             var valor = parseFloat(campoValor.text.replace(",", "."));
                             if (isNaN(valor) || valor <= 0 || campoDescricao.text.trim() === "") {
@@ -440,10 +459,13 @@ ApplicationWindow {
                             }
 
                             var ok = false;
-                            if (modoAtual === "receita") ok = db.adicionarReceita(campoDescricao.text, valor, hojeISO());
-                            else if (modoAtual === "despesa") ok = db.adicionarDespesa(campoDescricao.text, comboCategoria.currentText, valor, hojeISO());
-                            else if (modoAtual === "reserva") ok = db.adicionarMovimentoReserva(campoDescricao.text, valor, hojeISO(), tipoReserva);
-                            else if (modoAtual === "divida") {
+                            if (modoAtual === "receita") {
+                                ok = db.adicionarReceita(campoDescricao.text, valor, hojeISO());
+                            } else if (modoAtual === "despesa") {
+                                ok = db.adicionarDespesa(campoDescricao.text, comboCategoria.currentText, valor, hojeISO());
+                            } else if (modoAtual === "reserva") {
+                                ok = db.adicionarMovimentoReserva(campoDescricao.text, valor, hojeISO(), tipoReserva);
+                            } else if (modoAtual === "divida") {
                                 var parcelas = parseInt(campoParcelas.text);
                                 if (isNaN(parcelas) || parcelas <= 0) {
                                     avisoValidacao.text = "Informe a quantidade de parcelas.";
@@ -469,6 +491,7 @@ ApplicationWindow {
 
             // ---------- Dívidas e parcelamentos ----------
             Item { width: 1; height: 4 }
+
             Label {
                 text: "Minhas dívidas e parcelamentos"
                 font.pixelSize: 16
@@ -516,13 +539,39 @@ ApplicationWindow {
                             ColumnLayout {
                                 Layout.fillWidth: true
                                 spacing: 2
-                                Label { text: model.descricao; font.bold: true; font.pixelSize: 14; color: "#111827"; elide: Text.ElideRight; Layout.fillWidth: true }
-                                Label { text: (model.categoria ? model.categoria + " · " : "") + model.parcelasPagas + "/" + model.totalParcelas + " parcelas pagas"; font.pixelSize: 11; color: "#6B7280" }
+                                Label {
+                                    text: model.descricao
+                                    font.bold: true
+                                    font.pixelSize: 14
+                                    color: "#111827"
+                                    elide: Text.ElideRight
+                                    Layout.fillWidth: true
+                                }
+                                Label {
+                                    text: (model.categoria ? model.categoria + " · " : "") + model.parcelasPagas + "/" + model.totalParcelas + " parcelas pagas"
+                                    font.pixelSize: 11
+                                    color: "#6B7280"
+                                }
                             }
                             Rectangle {
-                                width: 24; height: 24; radius: 12; color: "#F3F4F6"
-                                Label { anchors.centerIn: parent; text: "✕"; color: "#9CA3AF"; font.pixelSize: 11 }
-                                MouseArea { anchors.fill: parent; onClicked: { db.removerDivida(model.id); atualizarDividas(); atualizarResumo(); } }
+                                width: 24
+                                height: 24
+                                radius: 12
+                                color: "#F3F4F6"
+                                Label {
+                                    anchors.centerIn: parent
+                                    text: "✕"
+                                    color: "#9CA3AF"
+                                    font.pixelSize: 11
+                                }
+                                MouseArea {
+                                    anchors.fill: parent
+                                    onClicked: {
+                                        db.removerDivida(model.id);
+                                        atualizarDividas();
+                                        atualizarResumo();
+                                    }
+                                }
                             }
                         }
 
@@ -531,15 +580,43 @@ ApplicationWindow {
                             height: 6
                             radius: 3
                             color: "#E5E7EB"
-                            Rectangle { width: parent.width * divRoot.progresso; height: parent.height; radius: 3; color: divRoot.quitada ? "#16A34A" : "#7C3AED" }
+                            Rectangle {
+                                width: parent.width * divRoot.progresso
+                                height: parent.height
+                                radius: 3
+                                color: divRoot.quitada ? "#16A34A" : "#7C3AED"
+                            }
                         }
 
                         RowLayout {
                             Layout.fillWidth: true
                             spacing: 8
-                            Label { text: "Restante: " + formatarMoeda(model.valorRestante); font.pixelSize: 12; color: "#6B7280"; Layout.fillWidth: true }
-                            AppButton { visible: !divRoot.quitada; implicitHeight: 34; implicitWidth: 140; label: "Pagar parcela"; corBase: "#7C3AED"; onClicked: { db.pagarParcela(model.id, hojeISO()); atualizarDividas(); atualizarResumo(); atualizarLista(); } }
-                            Label { visible: divRoot.quitada; text: "Quitada ✓"; color: "#16A34A"; font.bold: true; font.pixelSize: 12 }
+                            Label {
+                                text: "Restante: " + formatarMoeda(model.valorRestante)
+                                font.pixelSize: 12
+                                color: "#6B7280"
+                                Layout.fillWidth: true
+                            }
+                            AppButton {
+                                visible: !divRoot.quitada
+                                implicitHeight: 34
+                                implicitWidth: 140
+                                label: "Pagar parcela"
+                                corBase: "#7C3AED"
+                                onClicked: {
+                                    db.pagarParcela(model.id, hojeISO());
+                                    atualizarDividas();
+                                    atualizarResumo();
+                                    atualizarLista();
+                                }
+                            }
+                            Label {
+                                visible: divRoot.quitada
+                                text: "Quitada ✓"
+                                color: "#16A34A"
+                                font.bold: true
+                                font.pixelSize: 12
+                            }
                         }
                     }
                 }
@@ -547,7 +624,13 @@ ApplicationWindow {
 
             // ---------- Histórico ----------
             Item { width: 1; height: 4 }
-            Label { text: "Histórico"; font.pixelSize: 16; font.bold: true; color: "#111827" }
+
+            Label {
+                text: "Histórico"
+                font.pixelSize: 16
+                font.bold: true
+                color: "#111827"
+            }
 
             Label {
                 visible: listaModel.count === 0
@@ -581,7 +664,13 @@ ApplicationWindow {
                         return "#F59E0B";
                     }
 
-                    Rectangle { anchors.left: parent.left; width: 4; height: parent.height; radius: 2; color: delegateRoot.corLateral }
+                    Rectangle {
+                        anchors.left: parent.left
+                        width: 4
+                        height: parent.height
+                        radius: 2
+                        color: delegateRoot.corLateral
+                    }
 
                     RowLayout {
                         anchors.fill: parent
@@ -592,27 +681,77 @@ ApplicationWindow {
                         ColumnLayout {
                             Layout.fillWidth: true
                             spacing: 2
-                            Label { text: model.descricao; font.bold: true; font.pixelSize: 14; color: "#111827"; elide: Text.ElideRight; Layout.fillWidth: true }
-                            Label { text: {
-                                if (model.tipo === "despesa" && model.categoria) return model.categoria + " · " + model.data;
-                                if (model.tipo === "reserva_deposito") return "Reserva (depósito) · " + model.data;
-                                if (model.tipo === "reserva_saque") return "Reserva (saque) · " + model.data;
-                                return model.data;
-                            }; font.pixelSize: 11; color: "#6B7280" }
+                            Label {
+                                text: model.descricao
+                                font.bold: true
+                                font.pixelSize: 14
+                                color: "#111827"
+                                elide: Text.ElideRight
+                                Layout.fillWidth: true
+                            }
+                            Label {
+                                text: {
+                                    if (model.tipo === "despesa" && model.categoria) return model.categoria + " · " + model.data;
+                                    if (model.tipo === "reserva_deposito") return "Reserva (depósito) · " + model.data;
+                                    if (model.tipo === "reserva_saque") return "Reserva (saque) · " + model.data;
+                                    return model.data;
+                                }
+                                font.pixelSize: 11
+                                color: "#6B7280"
+                            }
                         }
 
-                        Label { text: { var sinal = (model.tipo === "despesa" || model.tipo === "reserva_saque") ? "- " : "+ "; return sinal + formatarMoeda(model.valor).replace("R$ ", ""); }; font.bold: true; font.pixelSize: 14; color: delegateRoot.corLateral }
-
-                        Rectangle {
-                            width: 26; height: 26; radius: 13; color: "#F3F4F6"
-                            Label { anchors.centerIn: parent; text: "✏️"; font.pixelSize: 11 }
-                            MouseArea { anchors.fill: parent; onClicked: { idEditando = model.id; campoEditDescricao.text = model.descricao; campoEditValor.text = String(model.valor).replace(".", ","); avisoEdicao.visible = false; popupEditar.open(); } }
+                        Label {
+                            text: {
+                                var sinal = (model.tipo === "despesa" || model.tipo === "reserva_saque") ? "- " : "+ ";
+                                return sinal + formatarMoeda(model.valor).replace("R$ ", "");
+                            }
+                            font.bold: true
+                            font.pixelSize: 14
+                            color: delegateRoot.corLateral
                         }
 
                         Rectangle {
-                            width: 26; height: 26; radius: 13; color: "#F3F4F6"
-                            Label { anchors.centerIn: parent; text: "✕"; color: "#9CA3AF"; font.pixelSize: 12 }
-                            MouseArea { anchors.fill: parent; onClicked: { db.removerLancamento(model.id); atualizarResumo(); atualizarLista(); } }
+                            width: 26
+                            height: 26
+                            radius: 13
+                            color: "#F3F4F6"
+                            Label {
+                                anchors.centerIn: parent
+                                text: "✏️"
+                                font.pixelSize: 11
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: {
+                                    idEditando = model.id;
+                                    campoEditDescricao.text = model.descricao;
+                                    campoEditValor.text = String(model.valor).replace(".", ",");
+                                    avisoEdicao.visible = false;
+                                    popupEditar.open();
+                                }
+                            }
+                        }
+
+                        Rectangle {
+                            width: 26
+                            height: 26
+                            radius: 13
+                            color: "#F3F4F6"
+                            Label {
+                                anchors.centerIn: parent
+                                text: "✕"
+                                color: "#9CA3AF"
+                                font.pixelSize: 12
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: {
+                                    db.removerLancamento(model.id);
+                                    atualizarResumo();
+                                    atualizarLista();
+                                }
+                            }
                         }
                     }
                 }
@@ -639,24 +778,66 @@ ApplicationWindow {
             width: parent.width
             spacing: 10
 
-            Label { text: "Editar lançamento"; font.pixelSize: 16; font.bold: true; color: "#111827" }
-            TextField { id: campoEditDescricao; width: parent.width; placeholderText: "Descrição" }
-            TextField { id: campoEditValor; width: parent.width; placeholderText: "Valor (R$)"; inputMethodHints: Qt.ImhFormattedNumbersOnly }
+            Label {
+                text: "Editar lançamento"
+                font.pixelSize: 16
+                font.bold: true
+                color: "#111827"
+            }
+
+            TextField {
+                id: campoEditDescricao
+                width: parent.width
+                placeholderText: "Descrição"
+            }
+
+            TextField {
+                id: campoEditValor
+                width: parent.width
+                placeholderText: "Valor (R$)"
+                inputMethodHints: Qt.ImhFormattedNumbersOnly
+            }
 
             Label {
-                id: avisoEdicao; visible: false; width: parent.width
-                text: "Informe um valor válido maior que zero."; color: "#DC2626"
-                font.pixelSize: 12; wrapMode: Text.WordWrap
+                id: avisoEdicao
+                visible: false
+                width: parent.width
+                text: "Informe um valor válido maior que zero."
+                color: "#DC2626"
+                font.pixelSize: 12
+                wrapMode: Text.WordWrap
             }
 
             RowLayout {
-                width: parent.width; spacing: 8
-                AppButton { Layout.fillWidth: true; label: "Cancelar"; corBase: "#9CA3AF"; onClicked: popupEditar.close() }
-                AppButton { Layout.fillWidth: true; label: "Salvar"; corBase: "#3B82F6"; onClicked: {
-                    var novoValor = parseFloat(campoEditValor.text.replace(",", "."));
-                    if (isNaN(novoValor) || novoValor <= 0 || campoEditDescricao.text.trim() === "") { avisoEdicao.visible = true; return; }
-                    if (db.editarLancamento(idEditando, campoEditDescricao.text, novoValor)) { popupEditar.close(); atualizarResumo(); atualizarLista(); } else { avisoEdicao.text = "Não foi possível salvar."; avisoEdicao.visible = true; }
+                width: parent.width
+                spacing: 8
+
+                AppButton {
+                    Layout.fillWidth: true
+                    label: "Cancelar"
+                    corBase: "#9CA3AF"
+                    onClicked: popupEditar.close()
                 }
+
+                AppButton {
+                    Layout.fillWidth: true
+                    label: "Salvar"
+                    corBase: "#3B82F6"
+                    onClicked: {
+                        var novoValor = parseFloat(campoEditValor.text.replace(",", "."));
+                        if (isNaN(novoValor) || novoValor <= 0 || campoEditDescricao.text.trim() === "") {
+                            avisoEdicao.visible = true;
+                            return;
+                        }
+                        if (db.editarLancamento(idEditando, campoEditDescricao.text, novoValor)) {
+                            popupEditar.close();
+                            atualizarResumo();
+                            atualizarLista();
+                        } else {
+                            avisoEdicao.text = "Não foi possível salvar.";
+                            avisoEdicao.visible = true;
+                        }
+                    }
                 }
             }
         }
@@ -677,16 +858,47 @@ ApplicationWindow {
 
             RowLayout {
                 Layout.fillWidth: true
-                Label { text: "Despesas fixas · " + mesAtual; font.pixelSize: 16; font.bold: true; color: "#111827"; Layout.fillWidth: true }
+                Label {
+                    text: "Despesas fixas · " + mesAtual
+                    font.pixelSize: 16
+                    font.bold: true
+                    color: "#111827"
+                    Layout.fillWidth: true
+                }
                 Rectangle {
-                    width: 26; height: 26; radius: 13; color: "#F3F4F6"
-                    Label { anchors.centerIn: parent; text: "✕"; color: "#9CA3AF"; font.pixelSize: 12 }
-                    MouseArea { anchors.fill: parent; onClicked: popupFixas.close() }
+                    width: 26
+                    height: 26
+                    radius: 13
+                    color: "#F3F4F6"
+                    Label {
+                        anchors.centerIn: parent
+                        text: "✕"
+                        color: "#9CA3AF"
+                        font.pixelSize: 12
+                    }
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: popupFixas.close()
+                    }
                 }
             }
 
-            Label { visible: fixasModel.count === 0; text: "Nenhuma despesa fixa cadastrada ainda. Adicione abaixo (ex: Dízimo, Internet, Água...)."; color: "#9CA3AF"; wrapMode: Text.WordWrap; Layout.fillWidth: true }
-            Label { visible: fixasModel.count > 0; text: "Dica: toda despesa lançada na tela inicial soma automaticamente aqui pela categoria (ex: várias despesas em \"Alimentação\" somam até completar o previsto de Comida)."; color: "#9CA3AF"; font.pixelSize: 11; wrapMode: Text.WordWrap; Layout.fillWidth: true }
+            Label {
+                visible: fixasModel.count === 0
+                text: "Nenhuma despesa fixa cadastrada ainda. Adicione abaixo (ex: Dízimo, Internet, Água...)."
+                color: "#9CA3AF"
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+
+            Label {
+                visible: fixasModel.count > 0
+                text: "Dica: toda despesa lançada na tela inicial soma automaticamente aqui pela categoria (ex: várias despesas em \"Alimentação\" somam até completar o previsto de Comida)."
+                color: "#9CA3AF"
+                font.pixelSize: 11
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
 
             Flickable {
                 Layout.fillWidth: true
@@ -718,29 +930,101 @@ ApplicationWindow {
                                 spacing: 8
 
                                 Rectangle {
-                                    width: 28; height: 28; radius: 14; color: model.pago ? "#16A34A" : "#E5E7EB"
-                                    Label { anchors.centerIn: parent; text: model.pago ? "✓" : ""; color: "white"; font.bold: true }
-                                    MouseArea { anchors.fill: parent; onClicked: { if (model.pago) { db.desmarcarDespesaFixaPaga(model.id, mesAtual); } else { var falta = model.valorPrevisto - model.valorGasto; if (falta <= 0) falta = model.valorPrevisto; db.marcarDespesaFixaPaga(model.id, mesAtual, falta, hojeISO()); } atualizarFixas(); atualizarLista(); atualizarResumo(); } }
+                                    width: 28
+                                    height: 28
+                                    radius: 14
+                                    color: model.pago ? "#16A34A" : "#E5E7EB"
+                                    Label {
+                                        anchors.centerIn: parent
+                                        text: model.pago ? "✓" : ""
+                                        color: "white"
+                                        font.bold: true
+                                    }
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        onClicked: {
+                                            if (model.pago) {
+                                                db.desmarcarDespesaFixaPaga(model.id, mesAtual);
+                                            } else {
+                                                var falta = model.valorPrevisto - model.valorGasto;
+                                                if (falta <= 0) falta = model.valorPrevisto;
+                                                db.marcarDespesaFixaPaga(model.id, mesAtual, falta, hojeISO());
+                                            }
+                                            atualizarFixas();
+                                            atualizarLista();
+                                            atualizarResumo();
+                                        }
+                                    }
                                 }
 
                                 ColumnLayout {
-                                    Layout.fillWidth: true; spacing: 1
-                                    Label { text: model.descricao; font.bold: true; font.pixelSize: 13; color: "#111827"; elide: Text.ElideRight; Layout.fillWidth: true }
-                                    Label { text: model.categoria + " · " + formatarMoeda(model.valorGasto) + " de " + formatarMoeda(model.valorPrevisto); font.pixelSize: 11; color: "#6B7280"; elide: Text.ElideRight; Layout.fillWidth: true }
+                                    Layout.fillWidth: true
+                                    spacing: 1
+                                    Label {
+                                        text: model.descricao
+                                        font.bold: true
+                                        font.pixelSize: 13
+                                        color: "#111827"
+                                        elide: Text.ElideRight
+                                        Layout.fillWidth: true
+                                    }
+                                    Label {
+                                        text: model.categoria + " · " + formatarMoeda(model.valorGasto) + " de " + formatarMoeda(model.valorPrevisto)
+                                        font.pixelSize: 11
+                                        color: "#6B7280"
+                                        elide: Text.ElideRight
+                                        Layout.fillWidth: true
+                                    }
                                 }
 
-                                Label { text: formatarMoeda(model.valorPrevisto); font.bold: true; font.pixelSize: 13; color: model.pago ? "#16A34A" : "#111827" }
-
-                                Rectangle {
-                                    width: 24; height: 24; radius: 12; color: "#F3F4F6"
-                                    Label { anchors.centerIn: parent; text: "✏️"; font.pixelSize: 10 }
-                                    MouseArea { anchors.fill: parent; onClicked: { idEditandoFixa = model.id; campoFixaDescricao.text = model.descricao; var idx = categoriasDespesa.indexOf(model.categoria); comboFixaCategoria.currentIndex = idx >= 0 ? idx : 0; campoFixaValor.text = String(model.valorPrevisto).replace(".", ","); popupEditarFixa.open(); } }
+                                Label {
+                                    text: formatarMoeda(model.valorPrevisto)
+                                    font.bold: true
+                                    font.pixelSize: 13
+                                    color: model.pago ? "#16A34A" : "#111827"
                                 }
 
                                 Rectangle {
-                                    width: 24; height: 24; radius: 12; color: "#F3F4F6"
-                                    Label { anchors.centerIn: parent; text: "✕"; color: "#9CA3AF"; font.pixelSize: 11 }
-                                    MouseArea { anchors.fill: parent; onClicked: { db.removerDespesaFixa(model.id); atualizarFixas(); } }
+                                    width: 24
+                                    height: 24
+                                    radius: 12
+                                    color: "#F3F4F6"
+                                    Label {
+                                        anchors.centerIn: parent
+                                        text: "✏️"
+                                        font.pixelSize: 10
+                                    }
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        onClicked: {
+                                            idEditandoFixa = model.id;
+                                            campoFixaDescricao.text = model.descricao;
+                                            var idx = categoriasDespesa.indexOf(model.categoria);
+                                            comboFixaCategoria.currentIndex = idx >= 0 ? idx : 0;
+                                            campoFixaValor.text = String(model.valorPrevisto).replace(".", ",");
+                                            popupEditarFixa.open();
+                                        }
+                                    }
+                                }
+
+                                Rectangle {
+                                    width: 24
+                                    height: 24
+                                    radius: 12
+                                    color: "#F3F4F6"
+                                    Label {
+                                        anchors.centerIn: parent
+                                        text: "✕"
+                                        color: "#9CA3AF"
+                                        font.pixelSize: 11
+                                    }
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        onClicked: {
+                                            db.removerDespesaFixa(model.id);
+                                            atualizarFixas();
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -751,14 +1035,31 @@ ApplicationWindow {
                         implicitHeight: 70
                         radius: 10
                         color: "#F3F4F6"
+
                         Column {
-                            anchors.fill: parent; anchors.margins: 8; spacing: 2
+                            anchors.fill: parent
+                            anchors.margins: 8
+                            spacing: 2
                             RowLayout {
                                 width: parent.width
-                                Label { text: "Previsto: " + formatarMoeda(totalFixasPrevisto); font.pixelSize: 12; color: "#374151"; Layout.fillWidth: true }
-                                Label { text: "Pago: " + formatarMoeda(totalFixasPago); font.pixelSize: 12; color: "#16A34A" }
+                                Label {
+                                    text: "Previsto: " + formatarMoeda(totalFixasPrevisto)
+                                    font.pixelSize: 12
+                                    color: "#374151"
+                                    Layout.fillWidth: true
+                                }
+                                Label {
+                                    text: "Pago: " + formatarMoeda(totalFixasPago)
+                                    font.pixelSize: 12
+                                    color: "#16A34A"
+                                }
                             }
-                            Label { text: "Falta pagar: " + formatarMoeda(totalFixasFalta); font.pixelSize: 13; font.bold: true; color: "#DC2626" }
+                            Label {
+                                text: "Falta pagar: " + formatarMoeda(totalFixasFalta)
+                                font.pixelSize: 13
+                                font.bold: true
+                                color: "#DC2626"
+                            }
                         }
                     }
 
@@ -772,14 +1073,46 @@ ApplicationWindow {
                         Column {
                             id: novaFixaColumn
                             width: parent.width - 20
-                            x: 10; y: 10
+                            x: 10
+                            y: 10
                             spacing: 8
 
-                            Label { text: "Adicionar despesa fixa"; font.bold: true; font.pixelSize: 13; color: "#111827" }
-                            TextField { id: campoNovaFixaDescricao; width: parent.width; placeholderText: "Ex: Dízimo, Internet, Água..." }
-                            ComboBox { id: comboNovaFixaCategoria; width: parent.width; model: categoriasDespesa }
-                            TextField { id: campoNovaFixaValor; width: parent.width; placeholderText: "Valor previsto (R$)"; inputMethodHints: Qt.ImhFormattedNumbersOnly }
-                            AppButton { width: parent.width; label: "Adicionar"; corBase: "#0EA5A4"; onClicked: { var valor = parseFloat(campoNovaFixaValor.text.replace(",", ".")); if (isNaN(valor) || valor <= 0 || campoNovaFixaDescricao.text.trim() === "") return; if (db.adicionarDespesaFixa(campoNovaFixaDescricao.text, comboNovaFixaCategoria.currentText, valor)) { campoNovaFixaDescricao.clear(); campoNovaFixaValor.clear(); atualizarFixas(); } } }
+                            Label {
+                                text: "Adicionar despesa fixa"
+                                font.bold: true
+                                font.pixelSize: 13
+                                color: "#111827"
+                            }
+                            TextField {
+                                id: campoNovaFixaDescricao
+                                width: parent.width
+                                placeholderText: "Ex: Dízimo, Internet, Água..."
+                            }
+                            ComboBox {
+                                id: comboNovaFixaCategoria
+                                width: parent.width
+                                model: categoriasDespesa
+                            }
+                            TextField {
+                                id: campoNovaFixaValor
+                                width: parent.width
+                                placeholderText: "Valor previsto (R$)"
+                                inputMethodHints: Qt.ImhFormattedNumbersOnly
+                            }
+                            AppButton {
+                                width: parent.width
+                                label: "Adicionar"
+                                corBase: "#0EA5A4"
+                                onClicked: {
+                                    var valor = parseFloat(campoNovaFixaValor.text.replace(",", "."));
+                                    if (isNaN(valor) || valor <= 0 || campoNovaFixaDescricao.text.trim() === "") return;
+                                    if (db.adicionarDespesaFixa(campoNovaFixaDescricao.text, comboNovaFixaCategoria.currentText, valor)) {
+                                        campoNovaFixaDescricao.clear();
+                                        campoNovaFixaValor.clear();
+                                        atualizarFixas();
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -799,15 +1132,56 @@ ApplicationWindow {
             width: parent.width
             spacing: 10
 
-            Label { text: "Editar despesa fixa"; font.pixelSize: 16; font.bold: true; color: "#111827" }
-            TextField { id: campoFixaDescricao; width: parent.width; placeholderText: "Descrição" }
-            ComboBox { id: comboFixaCategoria; width: parent.width; model: categoriasDespesa }
-            TextField { id: campoFixaValor; width: parent.width; placeholderText: "Valor previsto (R$)"; inputMethodHints: Qt.ImhFormattedNumbersOnly }
+            Label {
+                text: "Editar despesa fixa"
+                font.pixelSize: 16
+                font.bold: true
+                color: "#111827"
+            }
+
+            TextField {
+                id: campoFixaDescricao
+                width: parent.width
+                placeholderText: "Descrição"
+            }
+
+            ComboBox {
+                id: comboFixaCategoria
+                width: parent.width
+                model: categoriasDespesa
+            }
+
+            TextField {
+                id: campoFixaValor
+                width: parent.width
+                placeholderText: "Valor previsto (R$)"
+                inputMethodHints: Qt.ImhFormattedNumbersOnly
+            }
 
             RowLayout {
-                width: parent.width; spacing: 8
-                AppButton { Layout.fillWidth: true; label: "Cancelar"; corBase: "#9CA3AF"; onClicked: popupEditarFixa.close() }
-                AppButton { Layout.fillWidth: true; label: "Salvar"; corBase: "#0EA5A4"; onClicked: { var valor = parseFloat(campoFixaValor.text.replace(",", ".")); if (isNaN(valor) || valor <= 0 || campoFixaDescricao.text.trim() === "") return; if (db.editarDespesaFixa(idEditandoFixa, campoFixaDescricao.text, comboFixaCategoria.currentText, valor)) { popupEditarFixa.close(); atualizarFixas(); } } }
+                width: parent.width
+                spacing: 8
+
+                AppButton {
+                    Layout.fillWidth: true
+                    label: "Cancelar"
+                    corBase: "#9CA3AF"
+                    onClicked: popupEditarFixa.close()
+                }
+
+                AppButton {
+                    Layout.fillWidth: true
+                    label: "Salvar"
+                    corBase: "#0EA5A4"
+                    onClicked: {
+                        var valor = parseFloat(campoFixaValor.text.replace(",", "."));
+                        if (isNaN(valor) || valor <= 0 || campoFixaDescricao.text.trim() === "") return;
+                        if (db.editarDespesaFixa(idEditandoFixa, campoFixaDescricao.text, comboFixaCategoria.currentText, valor)) {
+                            popupEditarFixa.close();
+                            atualizarFixas();
+                        }
+                    }
+                }
             }
         }
     }
