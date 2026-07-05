@@ -1,0 +1,60 @@
+name: Compilar Agildo Financas
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    name: Gerar IPA para AltStore
+    runs-on: macos-latest
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+      
+      - name: Configurar Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          
+      - name: Instalar dependências
+        run: flutter pub get
+        
+      - name: Compilar iOS (Sem assinatura)
+        run: flutter build ios --release --no-codesign
+        
+      - name: Empacotar para AltStore (.ipa)
+        run: |
+          mkdir Payload
+          mv build/ios/iphoneos/Runner.app Payload/
+          zip -r AgildoFinancas.ipa Payload
+          
+      - name: Disponibilizar arquivo IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: AgildoFinancas-iOS
+          path: AgildoFinancas.ipa
+
+  build-android:
+    name: Gerar APK Android
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+          
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          
+      - run: flutter pub get
+      - run: flutter build apk --release
+      
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AgildoFinancas-Android
+          path: build/app/outputs/flutter-apk/app-release.apk
