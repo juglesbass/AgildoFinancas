@@ -9,20 +9,17 @@ set(CMAKE_AUTORCC ON)
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Quick QuickControls2 Sql)
 
-# Silencia os avisos do QML no terminal
 if(COMMAND qt_policy)
     qt_policy(SET QTP0001 NEW)
     qt_policy(SET QTP0004 NEW)
 endif()
 
-# CORREÇÃO AQUI: Mudamos o nome do executável para "AgildoFinancasApp"
 qt_add_executable(AgildoFinancasApp
     src/main.cpp
     src/DatabaseManager.h
     src/DatabaseManager.cpp
 )
 
-# O módulo QML continua com o nome original para não quebrar a interface
 qt_add_qml_module(AgildoFinancasApp
     URI AgildoFinancas
     VERSION 1.0
@@ -30,7 +27,6 @@ qt_add_qml_module(AgildoFinancasApp
         qml/Main.qml
 )
 
-# Linkando as bibliotecas no novo executável
 target_link_libraries(AgildoFinancasApp PRIVATE
     Qt6::Core
     Qt6::Gui

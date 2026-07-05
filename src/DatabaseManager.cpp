@@ -27,8 +27,6 @@ void DatabaseManager::inicializarBanco()
         return;
     }
 
-    // Tabela única: guarda receitas, despesas e movimentações da reserva de emergência.
-    // tipo: 'receita' | 'despesa' | 'reserva_deposito' | 'reserva_saque'
     QSqlQuery query;
     if (!query.exec("CREATE TABLE IF NOT EXISTS lancamentos ("
         "id INTEGER PRIMARY KEY AUTOINCREMENT, "
@@ -40,46 +38,38 @@ void DatabaseManager::inicializarBanco()
         qWarning() << "Erro ao criar tabela lancamentos:" << query.lastError().text();
         }
 
-        // Tabela de dívidas / parcelamentos (cartão, financiamento, empréstimo etc.)
         QSqlQuery queryDividas;
-        if (!queryDividas.exec("CREATE TABLE IF NOT EXISTS dividas ("
+    if (!queryDividas.exec("CREATE TABLE IF NOT EXISTS dividas ("
+        "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+        "descricao TEXT, "
+        "categoria TEXT, "
+        "valorParcela REAL NOT NULL, "
+        "totalParcelas INTEGER NOT NULL, "
+        "parcelasPagas INTEGER NOT NULL DEFAULT 0, "
+        "data TEXT)")) {
+        qWarning() << "Erro ao criar tabela dividas:" << queryDividas.lastError().text();
+        }
+
+        QSqlQuery queryFixas;
+        if (!queryFixas.exec("CREATE TABLE IF NOT EXISTS despesas_fixas ("
             "id INTEGER PRIMARY KEY AUTOINCREMENT, "
             "descricao TEXT, "
             "categoria TEXT, "
-            "valorParcela REAL NOT NULL, "
-            "totalParcelas INTEGER NOT NULL, "
-            "parcelasPagas INTEGER NOT NULL DEFAULT 0, "
-            "data TEXT)")) {
-            qWarning() << "Erro ao criar tabela dividas:" << queryDividas.lastError().text();
+            "valorPrevisto REAL NOT NULL)")) {
+            qWarning() << "Erro ao criar tabela despesas_fixas:" << queryFixas.lastError().text();
             }
 
-            // Modelo de despesas fixas mensais (ex: Dízimo, Internet, Água...)
-            QSqlQuery queryFixas;
-            if (!queryFixas.exec("CREATE TABLE IF NOT EXISTS despesas_fixas ("
-                "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                "descricao TEXT, "
-                "categoria TEXT, "
-                "valorPrevisto REAL NOT NULL)")) {
-                qWarning() << "Erro ao criar tabela despesas_fixas:" << queryFixas.lastError().text();
-                }
-
-                migrarDadosAntigos();
+            migrarDadosAntigos();
 }
 
 void DatabaseManager::migrarDadosAntigos()
 {
-    // Só migra se a tabela antiga "despesas" existir e a nova ainda estiver vazia,
-    // pra nunca duplicar dados em execuções seguintes.
     QSqlQuery checaAntiga("SELECT name FROM sqlite_master WHERE type='table' AND name='despesas'");
-    if (!checaAntiga.next()) {
-        return;
-    }
+    if (!checaAntiga.next()) return;
 
     QSqlQuery checaNova("SELECT COUNT(*) FROM lancamentos");
     checaNova.next();
-    if (checaNova.value(0).toInt() > 0) {
-        return;
-    }
+    if (checaNova.value(0).toInt() > 0) return;
 
     QSqlQuery antigos("SELECT descricao, valor, data FROM despesas");
     int migrados = 0;
@@ -90,13 +80,9 @@ void DatabaseManager::migrarDadosAntigos()
         insert.bindValue(":descricao", antigos.value(0).toString());
         insert.bindValue(":valor", antigos.value(1).toDouble());
         insert.bindValue(":data", antigos.value(2).toString());
-        if (insert.exec()) {
-            migrados++;
-        }
+        if (insert.exec()) migrados++;
     }
-    if (migrados > 0) {
-        qDebug() << "Migração concluída:" << migrados << "despesa(s) movida(s) para lancamentos.";
-    }
+    if (migrados > 0) qDebug() << "Migração concluída:" << migrados << "despesa(s) movida(s) para lancamentos.";
 }
 
 bool DatabaseManager::adicionarReceita(const QString &descricao, double valor, const QString &data)
@@ -107,11 +93,7 @@ bool DatabaseManager::adicionarReceita(const QString &descricao, double valor, c
     query.bindValue(":descricao", descricao);
     query.bindValue(":valor", valor);
     query.bindValue(":data", data);
-    if (!query.exec()) {
-        qWarning() << "Erro ao adicionar receita:" << query.lastError().text();
-        return false;
-    }
-    return true;
+    return query.exec();
 }
 
 bool DatabaseManager::adicionarDespesa(const QString &descricao, const QString &categoria, double valor, const QString &data)
@@ -123,17 +105,12 @@ bool DatabaseManager::adicionarDespesa(const QString &descricao, const QString &
     query.bindValue(":descricao", descricao);
     query.bindValue(":valor", valor);
     query.bindValue(":data", data);
-    if (!query.exec()) {
-        qWarning() << "Erro ao adicionar despesa:" << query.lastError().text();
-        return false;
-    }
-    return true;
+    return query.exec();
 }
 
 bool DatabaseManager::adicionarMovimentoReserva(const QString &descricao, double valor, const QString &data, const QString &tipoMovimento)
 {
     const QString tipoInterno = (tipoMovimento == "saque") ? "reserva_saque" : "reserva_deposito";
-
     QSqlQuery query;
     query.prepare("INSERT INTO lancamentos (tipo, categoria, descricao, valor, data) "
     "VALUES (:tipo, NULL, :descricao, :valor, :data)");
@@ -141,11 +118,7 @@ bool DatabaseManager::adicionarMovimentoReserva(const QString &descricao, double
     query.bindValue(":descricao", descricao);
     query.bindValue(":valor", valor);
     query.bindValue(":data", data);
-    if (!query.exec()) {
-        qWarning() << "Erro ao movimentar reserva:" << query.lastError().text();
-        return false;
-    }
-    return true;
+    return query.exec();
 }
 
 bool DatabaseManager::removerLancamento(int id)
@@ -153,11 +126,7 @@ bool DatabaseManager::removerLancamento(int id)
     QSqlQuery query;
     query.prepare("DELETE FROM lancamentos WHERE id = :id");
     query.bindValue(":id", id);
-    if (!query.exec()) {
-        qWarning() << "Erro ao remover lançamento:" << query.lastError().text();
-        return false;
-    }
-    return true;
+    return query.exec();
 }
 
 bool DatabaseManager::editarLancamento(int id, const QString &descricao, double valor)
@@ -167,21 +136,14 @@ bool DatabaseManager::editarLancamento(int id, const QString &descricao, double 
     query.bindValue(":descricao", descricao);
     query.bindValue(":valor", valor);
     query.bindValue(":id", id);
-    if (!query.exec()) {
-        qWarning() << "Erro ao editar lançamento:" << query.lastError().text();
-        return false;
-    }
-    return true;
+    return query.exec();
 }
 
 QVariantList DatabaseManager::listarLancamentos(int limite)
 {
     QVariantList lista;
     QString sql = "SELECT id, tipo, categoria, descricao, valor, data FROM lancamentos ORDER BY id DESC";
-    if (limite > 0) {
-        sql += QString(" LIMIT %1").arg(limite);
-    }
-
+    if (limite > 0) sql += QString(" LIMIT %1").arg(limite);
     QSqlQuery query(sql);
     while (query.next()) {
         QVariantMap item;
@@ -198,10 +160,7 @@ QVariantList DatabaseManager::listarLancamentos(int limite)
 
 QVariantMap DatabaseManager::obterResumo()
 {
-    double totalReceitas = 0.0;
-    double totalDespesas = 0.0;
-    double totalReserva = 0.0;
-
+    double totalReceitas = 0.0, totalDespesas = 0.0, totalReserva = 0.0;
     QSqlQuery query("SELECT tipo, SUM(valor) FROM lancamentos GROUP BY tipo");
     while (query.next()) {
         const QString tipo = query.value(0).toString();
@@ -212,11 +171,10 @@ QVariantMap DatabaseManager::obterResumo()
         else if (tipo == "reserva_saque") totalReserva -= soma;
     }
 
-    const double saldoTotal = totalReceitas - totalDespesas;       // patrimônio total (inclui reserva)
-    const double saldoDisponivel = saldoTotal - totalReserva;      // livre pra gastar sem mexer na reserva
+    const double saldoTotal = totalReceitas - totalDespesas;
+    const double saldoDisponivel = saldoTotal - totalReserva;
+    double comprometidoMensal = 0.0, dividaTotalRestante = 0.0;
 
-    double comprometidoMensal = 0.0;
-    double dividaTotalRestante = 0.0;
     QSqlQuery queryDividas("SELECT valorParcela, totalParcelas, parcelasPagas FROM dividas");
     while (queryDividas.next()) {
         const double valorParcela = queryDividas.value(0).toDouble();
@@ -250,11 +208,7 @@ bool DatabaseManager::adicionarDivida(const QString &descricao, const QString &c
     query.bindValue(":valorParcela", valorParcela);
     query.bindValue(":totalParcelas", totalParcelas);
     query.bindValue(":data", data);
-    if (!query.exec()) {
-        qWarning() << "Erro ao adicionar dívida:" << query.lastError().text();
-        return false;
-    }
-    return true;
+    return query.exec();
 }
 
 bool DatabaseManager::removerDivida(int id)
@@ -262,11 +216,7 @@ bool DatabaseManager::removerDivida(int id)
     QSqlQuery query;
     query.prepare("DELETE FROM dividas WHERE id = :id");
     query.bindValue(":id", id);
-    if (!query.exec()) {
-        qWarning() << "Erro ao remover dívida:" << query.lastError().text();
-        return false;
-    }
-    return true;
+    return query.exec();
 }
 
 bool DatabaseManager::pagarParcela(int id, const QString &data)
@@ -274,10 +224,7 @@ bool DatabaseManager::pagarParcela(int id, const QString &data)
     QSqlQuery busca;
     busca.prepare("SELECT descricao, categoria, valorParcela, totalParcelas, parcelasPagas FROM dividas WHERE id = :id");
     busca.bindValue(":id", id);
-    if (!busca.exec() || !busca.next()) {
-        qWarning() << "Erro ao buscar dívida para pagar parcela:" << busca.lastError().text();
-        return false;
-    }
+    if (!busca.exec() || !busca.next()) return false;
 
     const QString descricao = busca.value(0).toString();
     const QString categoria = busca.value(1).toString();
@@ -285,19 +232,13 @@ bool DatabaseManager::pagarParcela(int id, const QString &data)
     const int totalParcelas = busca.value(3).toInt();
     const int parcelasPagas = busca.value(4).toInt();
 
-    if (parcelasPagas >= totalParcelas) {
-        return false; // já quitada
-    }
+    if (parcelasPagas >= totalParcelas) return false;
 
     QSqlQuery atualiza;
     atualiza.prepare("UPDATE dividas SET parcelasPagas = parcelasPagas + 1 WHERE id = :id");
     atualiza.bindValue(":id", id);
-    if (!atualiza.exec()) {
-        qWarning() << "Erro ao atualizar parcelas pagas:" << atualiza.lastError().text();
-        return false;
-    }
+    if (!atualiza.exec()) return false;
 
-    // Registra a parcela paga como uma despesa no histórico
     return adicionarDespesa(QString("Parcela: %1").arg(descricao), categoria, valorParcela, data);
 }
 
@@ -328,32 +269,22 @@ QVariantList DatabaseManager::listarDividas()
 bool DatabaseManager::adicionarDespesaFixa(const QString &descricao, const QString &categoria, double valorPrevisto)
 {
     QSqlQuery query;
-    query.prepare("INSERT INTO despesas_fixas (descricao, categoria, valorPrevisto) "
-    "VALUES (:descricao, :categoria, :valorPrevisto)");
+    query.prepare("INSERT INTO despesas_fixas (descricao, categoria, valorPrevisto) VALUES (:descricao, :categoria, :valorPrevisto)");
     query.bindValue(":descricao", descricao);
     query.bindValue(":categoria", categoria);
     query.bindValue(":valorPrevisto", valorPrevisto);
-    if (!query.exec()) {
-        qWarning() << "Erro ao adicionar despesa fixa:" << query.lastError().text();
-        return false;
-    }
-    return true;
+    return query.exec();
 }
 
 bool DatabaseManager::editarDespesaFixa(int id, const QString &descricao, const QString &categoria, double valorPrevisto)
 {
     QSqlQuery query;
-    query.prepare("UPDATE despesas_fixas SET descricao = :descricao, categoria = :categoria, "
-    "valorPrevisto = :valorPrevisto WHERE id = :id");
+    query.prepare("UPDATE despesas_fixas SET descricao = :descricao, categoria = :categoria, valorPrevisto = :valorPrevisto WHERE id = :id");
     query.bindValue(":descricao", descricao);
     query.bindValue(":categoria", categoria);
     query.bindValue(":valorPrevisto", valorPrevisto);
     query.bindValue(":id", id);
-    if (!query.exec()) {
-        qWarning() << "Erro ao editar despesa fixa:" << query.lastError().text();
-        return false;
-    }
-    return true;
+    return query.exec();
 }
 
 bool DatabaseManager::removerDespesaFixa(int id)
@@ -361,42 +292,28 @@ bool DatabaseManager::removerDespesaFixa(int id)
     QSqlQuery query;
     query.prepare("DELETE FROM despesas_fixas WHERE id = :id");
     query.bindValue(":id", id);
-    if (!query.exec()) {
-        qWarning() << "Erro ao remover despesa fixa:" << query.lastError().text();
-        return false;
-    }
-    return true;
+    return query.exec();
 }
 
 QVariantList DatabaseManager::listarDespesasFixas(const QString &mesAno)
 {
     QVariantList lista;
     QSqlQuery query("SELECT id, descricao, categoria, valorPrevisto FROM despesas_fixas ORDER BY id ASC");
-    if (!query.exec()) {
-        qWarning() << "Erro ao listar despesas fixas:" << query.lastError().text();
-        return lista;
-    }
+    if (!query.exec()) return lista;
 
     const QString mesPrefix = mesAno + "%";
-
     while (query.next()) {
         const int id = query.value(0).toInt();
         const QString descricao = query.value(1).toString();
         const QString categoria = query.value(2).toString();
         const double valorPrevisto = query.value(3).toDouble();
 
-        // Soma tudo que já foi lançado nessa categoria neste mês (na tela inicial
-        // ou aqui mesmo) — assim várias despesas pequenas da mesma categoria
-        // (ex: Comida) se somam automaticamente até bater o valor previsto.
         QSqlQuery somaGasto;
-        somaGasto.prepare("SELECT COALESCE(SUM(valor), 0) FROM lancamentos "
-        "WHERE tipo = 'despesa' AND categoria = :categoria AND data LIKE :mesPrefix");
+        somaGasto.prepare("SELECT COALESCE(SUM(valor), 0) FROM lancamentos WHERE tipo = 'despesa' AND categoria = :categoria AND data LIKE :mesPrefix");
         somaGasto.bindValue(":categoria", categoria);
         somaGasto.bindValue(":mesPrefix", mesPrefix);
         double valorGasto = 0.0;
-        if (somaGasto.exec() && somaGasto.next()) {
-            valorGasto = somaGasto.value(0).toDouble();
-        }
+        if (somaGasto.exec() && somaGasto.next()) valorGasto = somaGasto.value(0).toDouble();
 
         QVariantMap item;
         item["id"] = id;
@@ -413,24 +330,13 @@ QVariantList DatabaseManager::listarDespesasFixas(const QString &mesAno)
 bool DatabaseManager::marcarDespesaFixaPaga(int id, const QString &mesAno, double valorPago, const QString &data)
 {
     Q_UNUSED(mesAno);
-
     QSqlQuery buscaFixa;
     buscaFixa.prepare("SELECT descricao, categoria FROM despesas_fixas WHERE id = :id");
     buscaFixa.bindValue(":id", id);
-    if (!buscaFixa.exec() || !buscaFixa.next()) {
-        qWarning() << "Erro ao buscar despesa fixa:" << buscaFixa.lastError().text();
-        return false;
-    }
-    const QString descricao = buscaFixa.value(0).toString();
-    const QString categoria = buscaFixa.value(1).toString();
+    if (!buscaFixa.exec() || !buscaFixa.next()) return false;
 
-    if (valorPago <= 0) {
-        return true; // categoria já estava com o valor previsto coberto
-    }
-
-    // Lança o valor que falta para completar o previsto — o mesmo lançamento
-    // que apareceria se você tivesse adicionado direto na tela inicial.
-    return adicionarDespesa(descricao, categoria, valorPago, data);
+    if (valorPago <= 0) return true;
+    return adicionarDespesa(buscaFixa.value(0).toString(), buscaFixa.value(1).toString(), valorPago, data);
 }
 
 bool DatabaseManager::desmarcarDespesaFixaPaga(int id, const QString &mesAno)
@@ -438,30 +344,16 @@ bool DatabaseManager::desmarcarDespesaFixaPaga(int id, const QString &mesAno)
     QSqlQuery buscaFixa;
     buscaFixa.prepare("SELECT categoria FROM despesas_fixas WHERE id = :id");
     buscaFixa.bindValue(":id", id);
-    if (!buscaFixa.exec() || !buscaFixa.next()) {
-        return false;
-    }
-    const QString categoria = buscaFixa.value(0).toString();
+    if (!buscaFixa.exec() || !buscaFixa.next()) return false;
 
-    // Remove o lançamento mais recente dessa categoria neste mês
-    // (o "desfazer" do último toque em OK).
     QSqlQuery buscaUltimo;
-    buscaUltimo.prepare("SELECT id FROM lancamentos "
-    "WHERE tipo = 'despesa' AND categoria = :categoria AND data LIKE :mesPrefix "
-    "ORDER BY id DESC LIMIT 1");
-    buscaUltimo.bindValue(":categoria", categoria);
+    buscaUltimo.prepare("SELECT id FROM lancamentos WHERE tipo = 'despesa' AND categoria = :categoria AND data LIKE :mesPrefix ORDER BY id DESC LIMIT 1");
+    buscaUltimo.bindValue(":categoria", buscaFixa.value(0).toString());
     buscaUltimo.bindValue(":mesPrefix", mesAno + "%");
-    if (!buscaUltimo.exec() || !buscaUltimo.next()) {
-        return false; // nada lançado nessa categoria neste mês
-    }
-    const int lancamentoId = buscaUltimo.value(0).toInt();
+    if (!buscaUltimo.exec() || !buscaUltimo.next()) return false;
 
     QSqlQuery remove;
     remove.prepare("DELETE FROM lancamentos WHERE id = :id");
-    remove.bindValue(":id", lancamentoId);
-    if (!remove.exec()) {
-        qWarning() << "Erro ao desmarcar despesa fixa:" << remove.lastError().text();
-        return false;
-    }
-    return true;
+    remove.bindValue(":id", buscaUltimo.value(0).toInt());
+    return remove.exec();
 }

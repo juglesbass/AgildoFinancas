@@ -6,9 +6,6 @@
 
 int main(int argc, char *argv[])
 {
-    // "Basic" deixava os botões com texto claro em fundo claro (baixo contraste).
-    // "Material" já resolve isso nos controles padrão (TextField, ComboBox etc.);
-    // os botões customizados no QML têm cor própria e não dependem do estilo.
     QQuickStyle::setStyle("Material");
 
     QGuiApplication app(argc, argv);
