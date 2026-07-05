@@ -3,8 +3,6 @@ name: Build Mobile and Desktop Apps
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
 
 jobs:
   build-linux:
@@ -14,7 +12,7 @@ jobs:
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
       with:
-        version: '6.6.0'
+        version: '6.8.0'
         host: 'linux'
         target: 'desktop'
     - name: Build
@@ -35,7 +33,7 @@ jobs:
     - name: Install Qt for Android
       uses: jurplel/install-qt-action@v3
       with:
-        version: '6.6.0'
+        version: '6.8.0'
         host: 'linux'
         target: 'android'
     - name: Build APK
@@ -43,3 +41,22 @@ jobs:
         mkdir build && cd build
         cmake -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake -DQT_HOST_PATH=$IQTA_TOOLS ..
         make
+
+  build-ios:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Qt for iOS
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.8.0'
+        host: 'mac'
+        target: 'ios'
+    - name: Build unsigned IPA
+      run: |
+        mkdir build && cd build
+        cmake -G Xcode -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES="arm64" ..
+        xcodebuild -project AgildoFinancas.xcodeproj -configuration Release CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+        mkdir -p Payload
+        cp -r Release-iphoneos/*.app Payload/
+        zip -r AgildoFinancasApp.ipa Payload
