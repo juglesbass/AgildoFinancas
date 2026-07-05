@@ -1,0 +1,45 @@
+name: Build Mobile and Desktop Apps
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.6.0'
+        host: 'linux'
+        target: 'desktop'
+    - name: Build
+      run: |
+        mkdir build && cd build
+        cmake ..
+        make
+
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+    - name: Install Qt for Android
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.6.0'
+        host: 'linux'
+        target: 'android'
+    - name: Build APK
+      run: |
+        mkdir build && cd build
+        cmake -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake -DQT_HOST_PATH=$IQTA_TOOLS ..
+        make
