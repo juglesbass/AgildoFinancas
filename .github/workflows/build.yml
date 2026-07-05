@@ -9,61 +9,63 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - name: Setup Python
-      uses: actions/setup-python@v5
-    - name: Install Qt (Desktop)
-      run: |
-        pip install aqtinstall
-        aqt install-qt linux desktop 6.8.0 gcc_64
-    - name: Build
+    - name: Instalar Qt (Desktop)
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.8.0'
+        target: 'desktop'
+    - name: Build Nativo
       run: |
         mkdir build && cd build
-        ../Qt/6.8.0/gcc_64/bin/qt-cmake ..
+        cmake ..
         cmake --build .
 
   build-android:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - name: Setup Java
+    - name: Configurar Java
       uses: actions/setup-java@v3
       with:
         distribution: 'temurin'
         java-version: '17'
-    - name: Setup Python
-      uses: actions/setup-python@v5
-    - name: Install Qt (Host & Target)
-      run: |
-        pip install aqtinstall
-        # Baixa as ferramentas do Linux e as bibliotecas do Android
-        aqt install-qt linux desktop 6.8.0 gcc_64
-        aqt install-qt linux android 6.8.0 android_arm64_v8a
+    - name: Instalar Qt (Host/Desktop)
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.8.0'
+        target: 'desktop'
+    - name: Instalar Qt (Android Target)
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.8.0'
+        target: 'android'
     - name: Build APK
       run: |
+        sudo apt-get update && sudo apt-get install -y ninja-build
         mkdir build && cd build
-        # Força a permissão de execução que estava dando erro
-        chmod +x ../Qt/6.8.0/android_arm64_v8a/bin/qt-cmake
-        # Passa o caminho das ferramentas Host que o CMake estava exigindo
-        ../Qt/6.8.0/android_arm64_v8a/bin/qt-cmake -DQT_HOST_PATH=$PWD/../Qt/6.8.0/gcc_64 ..
+        chmod +x $Qt6_DIR/bin/qt-cmake || true
+        $Qt6_DIR/bin/qt-cmake -DQT_HOST_PATH=${Qt6_DIR%/*}/gcc_64 -DQT_ANDROID_ABIS="arm64-v8a" ..
         cmake --build .
 
   build-ios:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v4
-    - name: Setup Python
-      uses: actions/setup-python@v5
-    - name: Install Qt (Host & Target)
-      run: |
-        pip install aqtinstall
-        # Baixa as ferramentas do Mac e as bibliotecas do iOS
-        aqt install-qt mac desktop 6.8.0 macos
-        aqt install-qt mac ios 6.8.0 ios
+    - name: Instalar Qt (Host/Desktop)
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.8.0'
+        target: 'desktop'
+    - name: Instalar Qt (iOS Target)
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.8.0'
+        target: 'ios'
     - name: Build IPA
       run: |
         mkdir build && cd build
-        chmod +x ../Qt/6.8.0/ios/bin/qt-cmake
-        ../Qt/6.8.0/ios/bin/qt-cmake -G Xcode -DCMAKE_SYSTEM_NAME=iOS -DQT_HOST_PATH=$PWD/../Qt/6.8.0/macos ..
+        chmod +x $Qt6_DIR/bin/qt-cmake || true
+        $Qt6_DIR/bin/qt-cmake -G Xcode -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES="arm64" -DQT_HOST_PATH=${Qt6_DIR%/*}/macos ..
         cmake --build . --config Release
         mkdir -p Payload
         cp -r Release-iphoneos/*.app Payload/ 2>/dev/null || cp -r Release/*.app Payload/
