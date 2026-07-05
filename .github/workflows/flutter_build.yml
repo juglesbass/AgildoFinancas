@@ -21,6 +21,10 @@ jobs:
       - name: Instalar dependências
         run: flutter pub get
         
+      - name: Hack para remover burocracia da Apple
+        run: |
+          sed -i '' 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' ios/Runner.xcodeproj/project.pbxproj
+        
       - name: Compilar iOS (Sem assinatura)
         run: flutter build ios --release --no-codesign
         
