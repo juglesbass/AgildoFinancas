@@ -21,8 +21,10 @@ jobs:
       - name: Instalar dependências
         run: flutter pub get
         
-      - name: Hack para remover burocracia da Apple
+      - name: Hack Extremo Antiburocracia da Apple
         run: |
+          echo "CODE_SIGNING_ALLOWED=NO" >> ios/Flutter/Generated.xcconfig
+          echo "CODE_SIGNING_REQUIRED=NO" >> ios/Flutter/Generated.xcconfig
           sed -i '' 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' ios/Runner.xcodeproj/project.pbxproj
         
       - name: Compilar iOS (Sem assinatura)
