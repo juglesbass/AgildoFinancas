@@ -39,7 +39,7 @@ jobs:
     - name: Build APK
       run: |
         mkdir build && cd build
-        cmake -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake -DQT_HOST_PATH=$IQTA_TOOLS ..
+        cmake -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake -DQT_HOST_PATH=$IQTA_TOOLS -DCMAKE_PREFIX_PATH=$Qt6_DIR ..
         make
 
   build-ios:
@@ -55,7 +55,7 @@ jobs:
     - name: Build unsigned IPA
       run: |
         mkdir build && cd build
-        cmake -G Xcode -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES="arm64" ..
+        cmake -G Xcode -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES="arm64" -DCMAKE_PREFIX_PATH=$Qt6_DIR ..
         xcodebuild -project AgildoFinancas.xcodeproj -configuration Release CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
         mkdir -p Payload
         cp -r Release-iphoneos/*.app Payload/
