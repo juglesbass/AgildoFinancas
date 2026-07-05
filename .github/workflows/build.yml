@@ -13,13 +13,12 @@ jobs:
       uses: jurplel/install-qt-action@v3
       with:
         version: '6.8.0'
-        host: 'linux'
         target: 'desktop'
     - name: Build
       run: |
         mkdir build && cd build
-        cmake ..
-        make
+        qt-cmake ..
+        cmake --build .
 
   build-android:
     runs-on: ubuntu-latest
@@ -34,13 +33,13 @@ jobs:
       uses: jurplel/install-qt-action@v3
       with:
         version: '6.8.0'
-        host: 'linux'
         target: 'android'
     - name: Build APK
       run: |
+        sudo apt-get update && sudo apt-get install -y ninja-build
         mkdir build && cd build
-        cmake -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake -DQT_HOST_PATH=$IQTA_TOOLS -DCMAKE_PREFIX_PATH=$Qt6_DIR ..
-        make
+        qt-cmake -DQT_ANDROID_ABIS=arm64-v8a ..
+        cmake --build .
 
   build-ios:
     runs-on: macos-latest
@@ -50,13 +49,12 @@ jobs:
       uses: jurplel/install-qt-action@v3
       with:
         version: '6.8.0'
-        host: 'mac'
         target: 'ios'
     - name: Build unsigned IPA
       run: |
         mkdir build && cd build
-        cmake -G Xcode -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES="arm64" -DCMAKE_PREFIX_PATH=$Qt6_DIR ..
-        xcodebuild -project AgildoFinancas.xcodeproj -configuration Release CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+        qt-cmake -G Xcode -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES="arm64" ..
+        cmake --build . --config Release
         mkdir -p Payload
-        cp -r Release-iphoneos/*.app Payload/
+        cp -r Release-iphoneos/*.app Payload/ 2>/dev/null || cp -r Release/*.app Payload/
         zip -r AgildoFinancasApp.ipa Payload
