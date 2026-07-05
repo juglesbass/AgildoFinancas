@@ -1,0 +1,40 @@
+name: Build Flutter Apps
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-flutter:
+    runs-on: macos-latest # O macOS compila tanto iOS quanto Android
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          flutter-version: '3.x'
+
+      - name: Instalar Dependências
+        run: flutter pub get
+
+      - name: Build Android (APK)
+        run: |
+          flutter build apk --release
+          mv build/app/outputs/flutter-apk/app-release.apk AgildoFinancas.apk
+
+      - name: Build iOS (IPA)
+        run: |
+          # Nota: O build de iOS real exige chaves de desenvolvedor Apple.
+          # Este comando prepara o build.
+          flutter build ipa --release --no-codesign
+          mv build/ios/ipa/*.ipa AgildoFinancas.ipa
+
+      - name: Salvar Artefatos
+        uses: actions/upload-artifact@v4
+        with:
+          name: App-Instaladores
+          path: |
+            *.apk
+            *.ipa

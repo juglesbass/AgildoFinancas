@@ -1,0 +1,25 @@
+name: agildo_financas
+description: "Agildo Finanças - controle financeiro pessoal"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  sqflite: ^2.3.3
+  path: ^1.9.0
+  path_provider: ^2.1.3
+  intl: ^0.19.0
+  cupertino_icons: ^1.0.8
+  sqflite_common_ffi: ^2.4.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
