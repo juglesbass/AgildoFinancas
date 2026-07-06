@@ -28,7 +28,8 @@ class AgildoFinancasApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        // SOLUÇÃO: FadeUpwards é 100% nativo, rápido e o compilador aceita sem reclamar
+        brightness: Brightness.dark,
+        
         pageTransitionsTheme: const PageTransitionsTheme(
           builders: <TargetPlatform, PageTransitionsBuilder>{
             TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
@@ -38,19 +39,28 @@ class AgildoFinancasApp extends StatelessWidget {
             TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
           },
         ),
+        
         colorScheme: ColorScheme.fromSeed(
           seedColor: corDestaque,
-          brightness: Brightness.light,
+          brightness: Brightness.dark,
         ),
-        scaffoldBackgroundColor: const Color(0xFFF3F4F6),
+        
+        scaffoldBackgroundColor: const Color(0xFF111827), 
+        
         inputDecorationTheme: const InputDecorationTheme(
           filled: true,
-          fillColor: Color(0xFFF9FAFB),
+          fillColor: Color(0xFF1F2937),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(8)),
-            borderSide: BorderSide(color: Color(0xFFE5E7EB)),
+            borderSide: BorderSide(color: Color(0xFF374151)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(8)),
+            borderSide: BorderSide(color: corDestaque, width: 2),
           ),
           contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          labelStyle: TextStyle(color: Color(0xFF9CA3AF)),
+          hintStyle: TextStyle(color: Color(0xFF6B7280)),
         ),
       ),
       home: const HomeScreen(),

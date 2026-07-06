@@ -24,7 +24,7 @@ class AppButton extends StatelessWidget {
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: corBase,
-          foregroundColor: Colors.white,
+          foregroundColor: Colors.white, // Letra sempre branca
           elevation: 0,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),

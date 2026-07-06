@@ -9,7 +9,6 @@ import '../widgets/app_button.dart';
 import '../widgets/summary_card.dart';
 import '../widgets/toggle_chip.dart';
 
-/// Porte direto da ApplicationWindow do Main.qml original.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -20,7 +19,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final _db = DatabaseHelper.instance;
 
-  // ---------- Estado da tela (equivalente às properties do QML) ----------
+  // ---------- Estado da tela ----------
   String _modoAtual = 'despesa';
   String _tipoReserva = 'deposito';
 
@@ -154,10 +153,69 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // --- NOVO MENU DE CARTÕES ---
+  void _abrirResumoCartoes() {
+    // Calcula o total por cartão agrupando as dívidas não quitadas
+    Map<String, double> totaisPorCartao = {};
+    for (var d in _dividas) {
+      if (!d.quitada) {
+        String cartao = (d.categoria != null && d.categoria!.isNotEmpty) ? d.categoria! : 'Outros';
+        totaisPorCartao[cartao] = (totaisPorCartao[cartao] ?? 0) + d.valorRestante;
+      }
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1F2937),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.credit_card, color: Colors.white, size: 24),
+                    SizedBox(width: 10),
+                    Text(
+                      'Resumo das Faturas',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                if (totaisPorCartao.isEmpty)
+                  const Text('Nenhuma dívida de cartão ativa.', style: TextStyle(color: Color(0xFF9CA3AF)))
+                else
+                  ...totaisPorCartao.entries.map((e) => Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(e.key, style: const TextStyle(fontSize: 16, color: Color(0xFFD1D5DB))),
+                        Text(
+                          formatarMoeda(e.value),
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFFF59E0B)),
+                        ),
+                      ],
+                    ),
+                  )),
+              ],
+            ),
+          ),
+        );
+      }
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F4F6),
       body: SafeArea(
         child: _carregando
             ? const Center(child: CircularProgressIndicator())
@@ -174,7 +232,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF111827),
                         ),
                       ),
                       const SizedBox(height: 14),
@@ -197,24 +254,44 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(height: 14),
                       _formulario(),
                       const SizedBox(height: 18),
-                      const Text(
-                        'Minhas dívidas e parcelamentos',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF111827),
-                        ),
+                      
+                      // NOVO CABEÇALHO COM O BOTÃO DE CARTÕES
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Minhas dívidas',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                          GestureDetector(
+                            onTap: _abrirResumoCartoes,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF374151), // Fundo escuro do botão
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: const Row(
+                                children: [
+                                  Icon(Icons.credit_card, size: 14, color: Color(0xFF9CA3AF)),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'Ver cartões',
+                                    style: TextStyle(fontSize: 12, color: Color(0xFF9CA3AF), fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 8),
+                      
+                      const SizedBox(height: 12),
                       _secaoDividas(),
                       const SizedBox(height: 18),
                       const Text(
                         'Histórico',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF111827),
-                        ),
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
                       _secaoHistorico(),
@@ -227,18 +304,32 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ---------- Resumo ----------
+  // ---------- Resumo Simétrico ----------
 
   Widget _resumoGrid() {
     return Column(
       children: [
-        SummaryCard(
-          titulo: 'Saldo disponível',
-          valor: formatarMoeda(_resumo.saldoDisponivel),
-          corValor: _resumo.saldoDisponivel >= 0
-              ? const Color(0xFF16A34A)
-              : const Color(0xFFDC2626),
-          height: 84,
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: SummaryCard(
+                titulo: 'Saldo disponível',
+                valor: formatarMoeda(_resumo.saldoDisponivel),
+                corValor: _resumo.saldoDisponivel >= 0
+                    ? const Color(0xFF16A34A)
+                    : const Color(0xFFDC2626),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: SummaryCard(
+                titulo: 'Dívida total restante',
+                valor: formatarMoeda(_resumo.dividaTotalRestante),
+                corValor: const Color(0xFFF59E0B),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 10),
         Row(
@@ -282,12 +373,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 10),
-        SummaryCard(
-          titulo: 'Dívida total restante',
-          valor: formatarMoeda(_resumo.dividaTotalRestante),
-          corValor: const Color(0xFFF59E0B),
-        ),
       ],
     );
   }
@@ -295,8 +380,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // ---------- Seletor de tipo de lançamento ----------
 
   Widget _seletorModo() {
-    Widget linha(String labelA, String modoA, Color corA, String labelB, String modoB,
-        Color corB) {
+    Widget linha(String labelA, String modoA, Color corA, String labelB, String modoB, Color corB) {
       return Row(
         children: [
           Expanded(
@@ -322,55 +406,39 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Column(
       children: [
-        linha('Receita', 'receita', const Color(0xFF16A34A), 'Despesa', 'despesa',
-            const Color(0xFFDC2626)),
+        linha('Receita', 'receita', const Color(0xFF16A34A), 'Despesa', 'despesa', const Color(0xFFDC2626)),
         const SizedBox(height: 8),
-        linha('Reserva', 'reserva', const Color(0xFF2563EB), 'Dívida', 'divida',
-            const Color(0xFF7C3AED)),
+        linha('Reserva', 'reserva', const Color(0xFF2563EB), 'Dívida', 'divida', const Color(0xFF7C3AED)),
       ],
     );
   }
 
-  // ---------- Formulário ----------
+  // ---------- Formulário Adaptado ----------
 
   String get _placeholderDescricao {
     switch (_modoAtual) {
-      case 'receita':
-        return 'Ex: Salário';
-      case 'despesa':
-        return 'Ex: Supermercado';
-      case 'reserva':
-        return 'Ex: Conserto do carro';
-      default:
-        return 'Ex: Notebook parcelado';
+      case 'receita': return 'Ex: Salário';
+      case 'despesa': return 'Ex: Supermercado';
+      case 'reserva': return 'Ex: Conserto do carro';
+      default: return 'Ex: Notebook parcelado';
     }
   }
 
   String get _labelBotaoSalvar {
     switch (_modoAtual) {
-      case 'receita':
-        return 'Adicionar receita';
-      case 'despesa':
-        return 'Adicionar despesa';
-      case 'reserva':
-        return _tipoReserva == 'deposito'
-            ? 'Depositar na reserva'
-            : 'Sacar da reserva';
-      default:
-        return 'Registrar dívida';
+      case 'receita': return 'Adicionar receita';
+      case 'despesa': return 'Adicionar despesa';
+      case 'reserva': return _tipoReserva == 'deposito' ? 'Depositar na reserva' : 'Sacar da reserva';
+      default: return 'Registrar dívida';
     }
   }
 
   Color get _corBotaoSalvar {
     switch (_modoAtual) {
-      case 'receita':
-        return const Color(0xFF16A34A);
-      case 'despesa':
-        return const Color(0xFFDC2626);
-      case 'reserva':
-        return const Color(0xFF2563EB);
-      default:
-        return const Color(0xFF7C3AED);
+      case 'receita': return const Color(0xFF16A34A);
+      case 'despesa': return const Color(0xFFDC2626);
+      case 'reserva': return const Color(0xFF2563EB);
+      default: return const Color(0xFF7C3AED);
     }
   }
 
@@ -378,9 +446,9 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF1F2937),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: const Color(0xFF374151)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -393,17 +461,14 @@ class _HomeScreenState extends State<HomeScreen> {
           if (_modoAtual == 'despesa') ...[
             Row(
               children: [
-                const Text('Categoria:', style: TextStyle(color: Color(0xFF374151))),
+                const Text('Categoria:', style: TextStyle(color: Color(0xFF9CA3AF))),
                 const SizedBox(width: 8),
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     value: _categoriaDespesa,
                     isExpanded: true,
-                    items: categoriasDespesa
-                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                        .toList(),
-                    onChanged: (v) =>
-                        setState(() => _categoriaDespesa = v ?? _categoriaDespesa),
+                    items: categoriasDespesa.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                    onChanged: (v) => setState(() => _categoriaDespesa = v ?? _categoriaDespesa),
                   ),
                 ),
               ],
@@ -437,17 +502,15 @@ class _HomeScreenState extends State<HomeScreen> {
           if (_modoAtual == 'divida') ...[
             Row(
               children: [
-                const Text('Categoria:', style: TextStyle(color: Color(0xFF374151))),
+                // TEXTO ALTERADO PARA CARTÃO
+                const Text('Cartão:', style: TextStyle(color: Color(0xFF9CA3AF))),
                 const SizedBox(width: 8),
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     value: _categoriaDivida,
                     isExpanded: true,
-                    items: categoriasDivida
-                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                        .toList(),
-                    onChanged: (v) =>
-                        setState(() => _categoriaDivida = v ?? _categoriaDivida),
+                    items: categoriasDivida.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                    onChanged: (v) => setState(() => _categoriaDivida = v ?? _categoriaDivida),
                   ),
                 ),
               ],
@@ -458,9 +521,7 @@ class _HomeScreenState extends State<HomeScreen> {
             controller: _campoValor,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: InputDecoration(
-              hintText: _modoAtual == 'divida'
-                  ? 'Valor de cada parcela (R\$)'
-                  : 'Valor (R\$)',
+              hintText: _modoAtual == 'divida' ? 'Valor de cada parcela (R\$)' : 'Valor (R\$)',
             ),
           ),
           if (_modoAtual == 'divida') ...[
@@ -473,10 +534,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
           if (_avisoValidacao != null) ...[
             const SizedBox(height: 8),
-            Text(
-              _avisoValidacao!,
-              style: const TextStyle(color: Color(0xFFDC2626), fontSize: 12),
-            ),
+            Text(_avisoValidacao!, style: const TextStyle(color: Color(0xFFDC2626), fontSize: 12)),
           ],
           const SizedBox(height: 10),
           AppButton(
@@ -496,8 +554,7 @@ class _HomeScreenState extends State<HomeScreen> {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 8),
         child: Text(
-          'Nenhuma dívida cadastrada. Registre cartão parcelado, '
-          'financiamento etc. no formulário acima.',
+          'Nenhuma dívida cadastrada. Registre cartão parcelado, financiamento etc. no formulário acima.',
           textAlign: TextAlign.center,
           style: TextStyle(color: Color(0xFF9CA3AF)),
         ),
@@ -513,9 +570,9 @@ class _HomeScreenState extends State<HomeScreen> {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF1F2937),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: const Color(0xFF374151)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -529,17 +586,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     Text(
                       d.descricao,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: Color(0xFF111827),
-                      ),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                       overflow: TextOverflow.ellipsis,
                     ),
                     Text(
                       '${d.categoria != null ? '${d.categoria} · ' : ''}'
                       '${d.parcelasPagas}/${d.totalParcelas} parcelas pagas',
-                      style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280)),
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
                     ),
                   ],
                 ),
@@ -555,7 +608,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   height: 24,
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Color(0xFFF3F4F6),
+                    color: Color(0xFF374151),
                   ),
                   child: const Icon(Icons.close, size: 12, color: Color(0xFF9CA3AF)),
                 ),
@@ -568,7 +621,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: LinearProgressIndicator(
               value: d.progresso.clamp(0.0, 1.0).toDouble(),
               minHeight: 6,
-              backgroundColor: const Color(0xFFE5E7EB),
+              backgroundColor: const Color(0xFF374151),
               valueColor: AlwaysStoppedAnimation(
                 d.quitada ? const Color(0xFF16A34A) : const Color(0xFF7C3AED),
               ),
@@ -580,7 +633,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(
                 child: Text(
                   'Restante: ${formatarMoeda(d.valorRestante)}',
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+                  style: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
                 ),
               ),
               if (!d.quitada)
@@ -602,11 +655,7 @@ class _HomeScreenState extends State<HomeScreen> {
               else
                 const Text(
                   'Quitada ✓',
-                  style: TextStyle(
-                    color: Color(0xFF16A34A),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: Color(0xFF16A34A), fontWeight: FontWeight.bold, fontSize: 12),
                 ),
             ],
           ),
@@ -622,8 +671,7 @@ class _HomeScreenState extends State<HomeScreen> {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 8),
         child: Text(
-          'Nenhum lançamento ainda. Adicione sua primeira receita ou '
-          'despesa acima.',
+          'Nenhum lançamento ainda. Adicione sua primeira receita ou despesa acima.',
           textAlign: TextAlign.center,
           style: TextStyle(color: Color(0xFF9CA3AF)),
         ),
@@ -636,14 +684,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Color _corLateral(String tipo) {
     switch (tipo) {
-      case 'receita':
-        return const Color(0xFF16A34A);
-      case 'despesa':
-        return const Color(0xFFDC2626);
-      case 'reserva_deposito':
-        return const Color(0xFF2563EB);
-      default:
-        return const Color(0xFFF59E0B);
+      case 'receita': return const Color(0xFF16A34A);
+      case 'despesa': return const Color(0xFFDC2626);
+      case 'reserva_deposito': return const Color(0xFF2563EB);
+      default: return const Color(0xFFF59E0B);
     }
   }
 
@@ -665,9 +709,9 @@ class _HomeScreenState extends State<HomeScreen> {
       margin: const EdgeInsets.only(bottom: 8),
       height: 56,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF1F2937),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: const Color(0xFF374151)),
       ),
       child: Row(
         children: [
@@ -691,25 +735,19 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         Text(
                           l.descricao,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                            color: Color(0xFF111827),
-                          ),
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
                           _subtitulo(l),
-                          style:
-                              const TextStyle(fontSize: 11, color: Color(0xFF6B7280)),
+                          style: const TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
                         ),
                       ],
                     ),
                   ),
                   Text(
                     valorTexto,
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 14, color: cor),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: cor),
                   ),
                   const SizedBox(width: 8),
                   GestureDetector(
@@ -728,9 +766,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       height: 26,
                       decoration: const BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Color(0xFFF3F4F6),
+                        color: Color(0xFF374151),
                       ),
-                      child: const Icon(Icons.edit, size: 11, color: Color(0xFF6B7280)),
+                      child: const Icon(Icons.edit, size: 11, color: Color(0xFF9CA3AF)),
                     ),
                   ),
                   const SizedBox(width: 6),
@@ -745,10 +783,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       height: 26,
                       decoration: const BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Color(0xFFF3F4F6),
+                        color: Color(0xFF374151),
                       ),
-                      child:
-                          const Icon(Icons.close, size: 12, color: Color(0xFF9CA3AF)),
+                      child: const Icon(Icons.close, size: 12, color: Color(0xFF9CA3AF)),
                     ),
                   ),
                 ],

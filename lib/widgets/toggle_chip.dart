@@ -25,13 +25,15 @@ class ToggleChip extends StatelessWidget {
         height: 40,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: selecionado ? corAtiva : const Color(0xFFE5E7EB),
+          // Fundo colorido se ativo, fundo grafite se inativo (Dark Mode)
+          color: selecionado ? corAtiva : const Color(0xFF374151),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: selecionado ? Colors.white : const Color(0xFF374151),
+            // Letra branca se ativo, cinza claro se inativo
+            color: selecionado ? Colors.white : const Color(0xFF9CA3AF),
             fontWeight: FontWeight.bold,
             fontSize: 13,
           ),

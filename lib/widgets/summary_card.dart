@@ -11,7 +11,8 @@ class SummaryCard extends StatelessWidget {
     super.key,
     required this.titulo,
     required this.valor,
-    this.corValor = const Color(0xFF111827),
+    // Se a cor do valor não for passada, usa branco por padrão no modo escuro
+    this.corValor = Colors.white, 
     this.height = 74,
   });
 
@@ -21,9 +22,9 @@ class SummaryCard extends StatelessWidget {
       height: height,
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF1F2937), // Fundo escuro (Dark Mode)
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: const Color(0xFF374151)), // Borda escura
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -31,7 +32,7 @@ class SummaryCard extends StatelessWidget {
         children: [
           Text(
             titulo,
-            style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+            style: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)), // Texto secundário claro
           ),
           const SizedBox(height: 2),
           Text(
@@ -39,7 +40,7 @@ class SummaryCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: corValor,
+              color: corValor, // Mantém o verde/vermelho/amarelo
             ),
             overflow: TextOverflow.ellipsis,
           ),
