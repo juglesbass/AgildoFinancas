@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:ui'; // Para o Blur
 
-/// Equivalente ao componente `ToggleChip` do Main.qml.
 class ToggleChip extends StatelessWidget {
   final String label;
   final bool selecionado;
@@ -19,23 +19,31 @@ class ToggleChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        curve: Curves.easeOut,
-        height: 40,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          // Fundo colorido se ativo, fundo grafite se inativo (Dark Mode)
-          color: selecionado ? corAtiva : const Color(0xFF374151),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            // Letra branca se ativo, cinza claro se inativo
-            color: selecionado ? Colors.white : const Color(0xFF9CA3AF),
-            fontWeight: FontWeight.bold,
-            fontSize: 13,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            curve: Curves.easeOut,
+            height: 44, // Mais alto para o texto respirar
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: selecionado ? corAtiva : Colors.white.withOpacity(0.06),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: selecionado ? corAtiva : Colors.white.withOpacity(0.12),
+              ),
+            ),
+            child: Text(
+              label,
+              style: TextStyle(
+                color: selecionado ? Colors.white : const Color(0xFFD1D5DB),
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                letterSpacing: 0.3, // Evita serrilhados
+              ),
+            ),
           ),
         ),
       ),
