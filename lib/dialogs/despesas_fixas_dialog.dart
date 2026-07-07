@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui'; // Para o efeito de Blur (Glassmorphism)
 
 import '../database_helper.dart';
 import '../models.dart';
@@ -90,68 +91,80 @@ class _DespesasFixasDialogState extends State<DespesasFixasDialog> {
   @override
   Widget build(BuildContext context) {
     final tamanhoTela = MediaQuery.of(context).size;
+    
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      backgroundColor: Colors.transparent, // Remove o fundo cinza padrão do Flutter
+      elevation: 0,
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
-      child: SizedBox(
-        width: tamanhoTela.width - 32,
-        height: (tamanhoTela.height - 64).clamp(0, 680).toDouble(),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              Row(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20), // Efeito de vidro
+          child: Container(
+            width: tamanhoTela.width - 32,
+            height: (tamanhoTela.height - 64).clamp(0, 680).toDouble(),
+            decoration: BoxDecoration(
+              color: const Color(0xFF111827).withOpacity(0.7), // Fundo translúcido escuro
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withOpacity(0.2)), // Borda brilhante
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
                 children: [
-                  Expanded(
-                    child: Text(
-                      'Despesas fixas · ${widget.mesAtual}',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF111827),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Despesas fixas · ${widget.mesAtual}',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white, // Letra clara
+                          ),
+                        ),
+                      ),
+                      _BotaoCircular(
+                        icone: Icons.close,
+                        onTap: () => Navigator.of(context).pop(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  if (!_carregando && _fixas.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: Text(
+                        'Nenhuma despesa fixa cadastrada ainda. Adicione abaixo '
+                        '(ex: Dízimo, Internet, Água...).',
+                        style: TextStyle(color: Color(0xFF9CA3AF)), // Cinza elegante
                       ),
                     ),
-                  ),
-                  _BotaoCircular(
-                    icone: Icons.close,
-                    onTap: () => Navigator.of(context).pop(),
+                  if (!_carregando && _fixas.isNotEmpty)
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 8),
+                      child: Text(
+                        'Dica: toda despesa lançada na tela inicial soma '
+                        'automaticamente aqui pela categoria.',
+                        style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 11),
+                      ),
+                    ),
+                  Expanded(
+                    child: _carregando
+                        ? const Center(child: CircularProgressIndicator())
+                        : ListView(
+                            children: [
+                              for (final fixa in _fixas) _tileFixa(fixa),
+                              const SizedBox(height: 12),
+                              _cardTotais(),
+                              const SizedBox(height: 12),
+                              _formNovaFixa(),
+                            ],
+                          ),
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
-              if (!_carregando && _fixas.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8),
-                  child: Text(
-                    'Nenhuma despesa fixa cadastrada ainda. Adicione abaixo '
-                    '(ex: Dízimo, Internet, Água...).',
-                    style: TextStyle(color: Color(0xFF9CA3AF)),
-                  ),
-                ),
-              if (!_carregando && _fixas.isNotEmpty)
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 8),
-                  child: Text(
-                    'Dica: toda despesa lançada na tela inicial soma '
-                    'automaticamente aqui pela categoria (ex: várias despesas '
-                    'em "Alimentação" somam até completar o previsto de Comida).',
-                    style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 11),
-                  ),
-                ),
-              Expanded(
-                child: _carregando
-                    ? const Center(child: CircularProgressIndicator())
-                    : ListView(
-                        children: [
-                          for (final fixa in _fixas) _tileFixa(fixa),
-                          const SizedBox(height: 8),
-                          _cardTotais(),
-                          const SizedBox(height: 8),
-                          _formNovaFixa(),
-                        ],
-                      ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -161,12 +174,12 @@ class _DespesasFixasDialogState extends State<DespesasFixasDialog> {
   Widget _tileFixa(DespesaFixa fixa) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
+        color: Colors.white.withOpacity(0.06), // Fundo de vidro
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: fixa.pago ? const Color(0xFF16A34A) : const Color(0xFFE5E7EB),
+          color: fixa.pago ? const Color(0xFF16A34A) : Colors.white.withOpacity(0.12),
         ),
       ),
       child: Row(
@@ -180,14 +193,14 @@ class _DespesasFixasDialogState extends State<DespesasFixasDialog> {
                 shape: BoxShape.circle,
                 color: fixa.pago
                     ? const Color(0xFF16A34A)
-                    : const Color(0xFFE5E7EB),
+                    : Colors.white.withOpacity(0.1),
               ),
               child: fixa.pago
                   ? const Icon(Icons.check, color: Colors.white, size: 16)
                   : null,
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -197,15 +210,16 @@ class _DespesasFixasDialogState extends State<DespesasFixasDialog> {
                   fixa.descricao,
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                    color: Color(0xFF111827),
+                    fontSize: 14,
+                    color: Colors.white,
+                    letterSpacing: 0.3,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   '${fixa.categoria} · ${formatarMoeda(fixa.valorGasto)} de '
                   '${formatarMoeda(fixa.valorPrevisto)}',
-                  style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280)),
+                  style: const TextStyle(fontSize: 11, color: Color(0xFFD1D5DB)),
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
@@ -215,11 +229,11 @@ class _DespesasFixasDialogState extends State<DespesasFixasDialog> {
             formatarMoeda(fixa.valorPrevisto),
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              fontSize: 13,
-              color: fixa.pago ? const Color(0xFF16A34A) : const Color(0xFF111827),
+              fontSize: 14,
+              color: fixa.pago ? const Color(0xFF4ADE80) : Colors.white,
             ),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 8),
           _BotaoCircular(
             icone: Icons.edit,
             tamanhoIcone: 12,
@@ -234,9 +248,10 @@ class _DespesasFixasDialogState extends State<DespesasFixasDialog> {
               );
             },
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 6),
           _BotaoCircular(
             icone: Icons.close,
+            tamanhoIcone: 12,
             onTap: () async {
               await _db.removerDespesaFixa(fixa.id);
               await _carregar();
@@ -249,10 +264,11 @@ class _DespesasFixasDialogState extends State<DespesasFixasDialog> {
 
   Widget _cardTotais() {
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF3F4F6),
-        borderRadius: BorderRadius.circular(10),
+        color: Colors.white.withOpacity(0.06), // Fundo de vidro
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withOpacity(0.12)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -263,22 +279,22 @@ class _DespesasFixasDialogState extends State<DespesasFixasDialog> {
               Expanded(
                 child: Text(
                   'Previsto: ${formatarMoeda(_totalPrevisto)}',
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF374151)),
+                  style: const TextStyle(fontSize: 13, color: Color(0xFFD1D5DB)),
                 ),
               ),
               Text(
                 'Pago: ${formatarMoeda(_totalPago)}',
-                style: const TextStyle(fontSize: 12, color: Color(0xFF16A34A)),
+                style: const TextStyle(fontSize: 13, color: Color(0xFF4ADE80)), // Verde vivo
               ),
             ],
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: 6),
           Text(
             'Falta pagar: ${formatarMoeda(_totalFalta)}',
             style: const TextStyle(
-              fontSize: 13,
+              fontSize: 15,
               fontWeight: FontWeight.bold,
-              color: Color(0xFFDC2626),
+              color: Color(0xFFF87171), // Vermelho vivo
             ),
           ),
         ],
@@ -288,11 +304,11 @@ class _DespesasFixasDialogState extends State<DespesasFixasDialog> {
 
   Widget _formNovaFixa() {
     return Container(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        color: Colors.white.withOpacity(0.06), // Fundo de vidro
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withOpacity(0.12)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -302,11 +318,11 @@ class _DespesasFixasDialogState extends State<DespesasFixasDialog> {
             'Adicionar despesa fixa',
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              fontSize: 13,
-              color: Color(0xFF111827),
+              fontSize: 14,
+              color: Colors.white,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           TextField(
             controller: _campoDescricao,
             decoration: const InputDecoration(
@@ -314,7 +330,7 @@ class _DespesasFixasDialogState extends State<DespesasFixasDialog> {
               isDense: true,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           DropdownButtonFormField<String>(
             value: _categoriaNova,
             isExpanded: true,
@@ -325,7 +341,7 @@ class _DespesasFixasDialogState extends State<DespesasFixasDialog> {
               if (novo != null) setState(() => _categoriaNova = novo);
             },
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           TextField(
             controller: _campoValor,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -334,7 +350,7 @@ class _DespesasFixasDialogState extends State<DespesasFixasDialog> {
               isDense: true,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           AppButton(
             label: 'Adicionar',
             corBase: const Color(0xFF0EA5A4),
@@ -354,7 +370,7 @@ class _BotaoCircular extends StatelessWidget {
   const _BotaoCircular({
     required this.icone,
     required this.onTap,
-    this.tamanhoIcone = 14,
+    this.tamanhoIcone = 16,
   });
 
   @override
@@ -362,13 +378,13 @@ class _BotaoCircular extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 26,
-        height: 26,
-        decoration: const BoxDecoration(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: Color(0xFFF3F4F6),
+          color: Colors.white.withOpacity(0.15), // Botão de vidro
         ),
-        child: Icon(icone, size: tamanhoIcone, color: const Color(0xFF9CA3AF)),
+        child: Icon(icone, size: tamanhoIcone, color: Colors.white), // Ícone branco
       ),
     );
   }
